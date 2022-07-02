@@ -53,7 +53,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             samples, targets = mixup_fn(samples, targets)
 
         with torch.cuda.amp.autocast():
-            loss_twobranch , outputs = model(samples)
+            loss_twobranch , outputs = model(samples , args.mask_ratio)
             loss = criterion(outputs, targets)
             loss += args.lambda_loss_mae * loss_twobranch
 
@@ -114,7 +114,7 @@ def evaluate(data_loader, model, device):
 
         # compute output
         with torch.cuda.amp.autocast():
-            output = model(images)
+            output = model.forward_test(images)
             loss = criterion(output, target)
 
         acc1, acc5 = accuracy(output, target, topk=(1, 5))

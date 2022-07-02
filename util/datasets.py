@@ -12,7 +12,7 @@ import os
 import PIL
 
 from torchvision import datasets, transforms
-
+import torchvision
 from timm.data import create_transform
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 
