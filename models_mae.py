@@ -248,7 +248,7 @@ class MaskedAutoencoderViT(nn.Module):
     def forward_test(self, imgs):
         output = self.forward_vanilla(imgs)
         class_token = output[: , 0 , :]
-        predicted_class = self.head(cls_vanilla)
+        predicted_class = self.head(class_token)
         return predicted_class
         
 
