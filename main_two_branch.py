@@ -40,8 +40,11 @@ def get_args_parser():
                         help='Accumulate gradient iterations (for increasing the effective batch size under memory constraints)')
 
     # Model parameters
-    parser.add_argument('--model', default='mae_vit_base', type=str, metavar='MODEL',
+    parser.add_argument('--model', default='mae_vit_tiny', type=str, metavar='MODEL',
                         help='Name of model to train')
+    parser.add_argument('--norm_pix_loss', action='store_true',
+                        help='Use (per-patch) normalized pixels as targets for computing loss')
+    parser.set_defaults(norm_pix_loss=False)
 
     parser.add_argument('--input_size', default=32, type=int,
                         help='images input size')
@@ -50,7 +53,7 @@ def get_args_parser():
     parser.add_argument('--mask_ratio', default=0.75, type=float,
                         help='Masking ratio (percentage of removed patches).')
 
-    parser.add_argument('--lambda_loss_mae', default=1.0, type=float,
+    parser.add_argument('--lambda_weight', default=0.9, type=float,
                         help='Loss weightage .')
 
     parser.add_argument('--drop_path', type=float, default=0.1, metavar='PCT',
@@ -229,6 +232,7 @@ def main(args):
         patch_size= args.patch_size,
         img_size= args.input_size,
         num_classes=args.nb_classes,
+        norm_pix_loss = args.norm_pix_loss
     )
 
     if args.finetune and not args.eval:

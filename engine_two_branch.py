@@ -54,8 +54,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         with torch.cuda.amp.autocast():
             loss_twobranch , outputs = model(samples , args.mask_ratio)
-            loss = criterion(outputs, targets)
-            loss += args.lambda_loss_mae * loss_twobranch
+            loss = args.lambda_weight * criterion(outputs, targets)
+            loss += (1-args.lambda_weight) * loss_twobranch
 
         loss_value = loss.item()
 

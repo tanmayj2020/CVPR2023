@@ -25,7 +25,7 @@ class MaskedAutoencoderViT(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3,
                  embed_dim=1024, depth=24, num_heads=16,
                  decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
-                 mlp_ratio=4., norm_layer=nn.LayerNorm, num_classes =10):
+                 mlp_ratio=4., norm_layer=nn.LayerNorm, num_classes =10 ,norm_pix_loss=False):
         super().__init__()
 
         # --------------------------------------------------------------------------
@@ -63,6 +63,7 @@ class MaskedAutoencoderViT(nn.Module):
 
 
         self.head = nn.Linear(embed_dim, num_classes) if num_classes > 0 else nn.Identity()
+        self.norm_pix_loss = norm_pix_loss
 
         self.initialize_weights()
 
@@ -218,6 +219,10 @@ class MaskedAutoencoderViT(nn.Module):
         return x
 
     def forward_loss(self, img_vanilla,  decoder_predicted , mask):
+        if self.norm_pix_loss:
+            mean = img_vanilla.mean(dim=-1, keepdim=True)
+            var = img_vanilla.var(dim=-1, keepdim=True)
+            img_vanilla = (img_vanilla - mean) / (var + 1.e-6)**.5
         loss = (img_vanilla - decoder_predicted) ** 2
         loss = loss.mean(dim=-1)  # [N, L], mean loss per patch
         loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
@@ -247,7 +252,13 @@ class MaskedAutoencoderViT(nn.Module):
         return predicted_class
         
 
-
+def mae_vit_tiny_dec128d2b(**kwargs):
+    model = MaskedAutoencoderViT(
+        embed_dim=192, depth=12, num_heads=2,
+        decoder_embed_dim=128, decoder_depth=2, decoder_num_heads=16,
+        mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs
+    )
+    return model
 
 
 def mae_vit_base_dec512d8b(**kwargs):
@@ -279,6 +290,7 @@ def mae_vit_huge_dec512d8b(**kwargs):
 
 
 # set recommended archs
+mae_vit_tiny = mae_vit_tiny_dec128d2b
 mae_vit_base = mae_vit_base_dec512d8b  # decoder: 512 dim, 8 blocks
 mae_vit_large = mae_vit_large_dec512d8b  # decoder: 512 dim, 8 blocks
 mae_vit_huge = mae_vit_huge_dec512d8b  # decoder: 512 dim, 8 blocks
