@@ -46,7 +46,7 @@ def get_args_parser():
                         help='Use (per-patch) normalized pixels as targets for computing loss')
     parser.set_defaults(norm_pix_loss=False)
     
-     parser.add_argument('--dataset', type = str, help='Dataset to use')
+    parser.add_argument('--dataset', type = str, help='Dataset to use')
 
     parser.add_argument('--input_size', default=32, type=int,
                         help='images input size')
