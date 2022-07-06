@@ -254,7 +254,7 @@ class MaskedAutoencoderViT(nn.Module):
 
 def mae_vit_tiny_dec128d2b(**kwargs):
     model = MaskedAutoencoderViT(
-        embed_dim=192, depth=12, num_heads=2,
+        embed_dim=192, depth=12, num_heads=3,
         decoder_embed_dim=128, decoder_depth=2, decoder_num_heads=16,
         mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs
     )
