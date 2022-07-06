@@ -23,7 +23,7 @@ def build_dataset(is_train, args):
     #root = os.path.join(args.data_path, 'train' if is_train else 'val')
     #dataset = datasets.ImageFolder(root, transform=transform)
     if args.dataset == "c10":
-         dataset = torchvision.datasets.CIFAR100(
+         dataset = torchvision.datasets.CIFAR10(
         root='./data', train=is_train, download=True, transform=transform)
     elif args.dataset == "c100":   
         dataset = torchvision.datasets.CIFAR100(
