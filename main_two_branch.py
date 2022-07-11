@@ -1,10 +1,10 @@
-
 import argparse
 import datetime
 import json
 import numpy as np
 import os
 import time
+import wandb
 from pathlib import Path
 
 import torch
@@ -25,9 +25,7 @@ from util.datasets import build_dataset
 from util.pos_embed import interpolate_pos_embed
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
 
-import models_vit
-import models_mae
-
+import model_mae_image_loss as models_mae
 from engine_two_branch import train_one_epoch, evaluate
 
 
@@ -35,16 +33,18 @@ def get_args_parser():
     parser = argparse.ArgumentParser('MAE fine-tuning for image classification', add_help=False)
     parser.add_argument('--batch_size', default=64, type=int,
                         help='Batch size per GPU (effective batch size is batch_size * accum_iter * # gpus')
-    parser.add_argument('--epochs', default=100, type=int)
+    parser.add_argument('--epochs', default=50, type=int)
     parser.add_argument('--accum_iter', default=1, type=int,
                         help='Accumulate gradient iterations (for increasing the effective batch size under memory constraints)')
 
     # Model parameters
-    parser.add_argument('--model', default='mae_vit_tiny', type=str, metavar='MODEL',
+    parser.add_argument('--model', default='mae_vit_small', type=str, metavar='MODEL',
                         help='Name of model to train')
     parser.add_argument('--norm_pix_loss', action='store_true',
                         help='Use (per-patch) normalized pixels as targets for computing loss')
     parser.set_defaults(norm_pix_loss=False)
+    
+    parser.add_argument('--dataset', type = str, help='Dataset to use')
 
     parser.add_argument('--input_size', default=32, type=int,
                         help='images input size')
@@ -53,8 +53,10 @@ def get_args_parser():
     parser.add_argument('--mask_ratio', default=0.75, type=float,
                         help='Masking ratio (percentage of removed patches).')
 
-    parser.add_argument('--lambda_weight', default=0.9, type=float,
-                        help='Loss weightage .')
+    parser.add_argument('--lambda_weight_feature', default=0.45, type=float,
+                        help='Loss weightage feature decoder.')
+    parser.add_argument('--lambda_weight_image', default=0.45, type=float,
+                        help='Loss weightage image decoder.')
 
     parser.add_argument('--drop_path', type=float, default=0.1, metavar='PCT',
                         help='Drop path rate (default: 0.1)')
@@ -159,6 +161,13 @@ def get_args_parser():
 
 
 def main(args):
+    wandb.init(project='MAE-Project', entity='tanmayj2020')
+    config = wandb.config
+    config.dataset = args.dataset
+    config.model = args.model
+    config.epoch = args.epochs
+    config.classification_loss_ratio= args.lambda_weight
+
     misc.init_distributed_mode(args)
 
     print('job dir: {}'.format(os.path.dirname(os.path.realpath(__file__))))
@@ -320,9 +329,10 @@ def main(args):
             args=args
         )
         if args.output_dir:
-            misc.save_model(
-                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                loss_scaler=loss_scaler, epoch=epoch)
+            if epoch % 10 == 0:
+                misc.save_model(
+                    args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                    loss_scaler=loss_scaler, epoch=epoch)
 
         test_stats = evaluate(data_loader_val, model, device)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
@@ -332,12 +342,13 @@ def main(args):
         if log_writer is not None:
             log_writer.add_scalar('perf/test_acc1', test_stats['acc1'], epoch)
             log_writer.add_scalar('perf/test_acc5', test_stats['acc5'], epoch)
-            log_writer.add_scalar('perf/test_loss', test_stats['loss'], epoch)
+            log_writer.add_scalar('perf/test_loss', test_stats['testing_loss'], epoch)
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                         **{f'test_{k}': v for k, v in test_stats.items()},
                         'epoch': epoch,
                         'n_parameters': n_parameters}
+        wandb.log({"epoch" : epoch , **train_stats , **test_stats})
 
         if args.output_dir and misc.is_main_process():
             if log_writer is not None:
