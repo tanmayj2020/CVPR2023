@@ -166,7 +166,8 @@ def main(args):
     config.dataset = args.dataset
     config.model = args.model
     config.epoch = args.epochs
-    config.classification_loss_ratio= args.lambda_weight
+    config.lambda_weight_feature= args.lambda_weight_feature
+    config.lambda_weight_image= args.lambda_weight_image
 
     misc.init_distributed_mode(args)
 
