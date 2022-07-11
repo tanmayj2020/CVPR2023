@@ -12,9 +12,8 @@
 import math
 import sys
 from typing import Iterable, Optional
-
 import torch
-
+import wandb
 from timm.data import Mixup
 from timm.utils import accuracy
 
@@ -51,11 +50,14 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         if mixup_fn is not None:
             samples, targets = mixup_fn(samples, targets)
-
+        loss = 0.0
         with torch.cuda.amp.autocast():
-            loss_twobranch , outputs = model(samples , args.mask_ratio)
-            loss = args.lambda_weight * criterion(outputs, targets)
-            loss += (1-args.lambda_weight) * loss_twobranch
+            loss_twobranchfeature, loss_twobranch_image , outputs = model(samples , args.mask_ratio)
+            classification_loss = (1 - args.lambda_weight_feature - args.lambda_weight_image) * criterion(outputs, targets)
+            loss_twobranchfeature = (args.lambda_weight_feature) * loss_twobranchfeature
+            loss_twobranchimage = (args.lambda_weight_image) * loss_twobranch_image
+            loss = loss_twobranchfeature + loss_twobranchimage + classification_loss
+
 
         loss_value = loss.item()
 
@@ -72,7 +74,11 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         torch.cuda.synchronize()
 
-        metric_logger.update(loss=loss_value)
+        metric_logger.update(training_loss=loss_value)
+        metric_logger.update(loss_two_branch_feature = loss_twobranchfeature.item())
+        metric_logger.update(loss_two_branch_image = loss_twobranchimage.item())
+        metric_logger.update(classification_loss = classification_loss.item())
+        metric_logge
         min_lr = 10.
         max_lr = 0.
         for group in optimizer.param_groups:
@@ -116,16 +122,16 @@ def evaluate(data_loader, model, device):
         with torch.cuda.amp.autocast():
             output = model.forward_test(images)
             loss = criterion(output, target)
-
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
 
+
         batch_size = images.shape[0]
-        metric_logger.update(loss=loss.item())
+        metric_logger.update(testing_loss=loss.item())
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
         metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
-          .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
+          .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.testing_loss))
 
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
