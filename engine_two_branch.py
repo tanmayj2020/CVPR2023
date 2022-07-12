@@ -54,7 +54,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         with torch.cuda.amp.autocast():
             outputs , outs = model(samples , args.mask_ratio)
             classification_loss = args.lambda_weight * criterion(outputs, targets)
-            loss_ssup, ssup_items = (1 - args.lambda_weight) * criterion_ssup(outs)
+            loss_ssup, ssup_items = (1 - args.lambda_weight) * cal_selfsupervised_loss(outs)
             loss = classification_loss + loss_ssup
 
 
