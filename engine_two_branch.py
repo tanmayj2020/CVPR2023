@@ -78,7 +78,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         metric_logger.update(loss_two_branch_feature = loss_twobranchfeature.item())
         metric_logger.update(loss_two_branch_image = loss_twobranchimage.item())
         metric_logger.update(classification_loss = classification_loss.item())
-        metric_logge
         min_lr = 10.
         max_lr = 0.
         for group in optimizer.param_groups:
