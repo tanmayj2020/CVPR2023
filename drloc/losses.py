@@ -57,7 +57,7 @@ def cal_selfsupervised_loss(outs):
        
     loss_drloc = 0.0
     for deltaxy, drloc, plane_size in zip(outs.deltaxy, outs.drloc, outs.plz):
-        loss_drloc += reld_criterion(deltaxy, drloc) * lambda_drloc
+        loss_drloc += reld_criterion(deltaxy, drloc)
     all_losses.drloc = loss_drloc.item()
     loss += loss_drloc
 
