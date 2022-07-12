@@ -238,7 +238,7 @@ class MaskedAutoencoderViT(nn.Module):
         predicted_class = self.head(cls_vanilla)  # Class predictions by the network
 
         outs = Munch()
-        x_last = x[:,1:] # B, L, C 
+        x_last = latent_vanilla[:,1:] # B, L, C 
         x_last = x_last.transpose(1, 2) # [B, C, L]
         B, C, HW = x_last.size()
         H = W = int(math.sqrt(HW))
