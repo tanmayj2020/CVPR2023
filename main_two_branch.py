@@ -54,7 +54,7 @@ def get_args_parser():
     parser.add_argument('--mask_ratio', default=0.75, type=float,
                         help='Masking ratio (percentage of removed patches).')
 
-    parser.add_argument('--lambda_weight', default=0.9, type=float,
+    parser.add_argument('--lambda_weight', default=0.1, type=float,
                         help='Loss weightage .')
 
     parser.add_argument('--drop_path', type=float, default=0.1, metavar='PCT',
