@@ -2,6 +2,6 @@
 
 
 <br/>
-# Dataset: [Texture](https://www.robots.ox.ac.uk/~vgg/data/dtd/index.html)
+# T2T in our
 <br/>
 
